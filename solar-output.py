@@ -16,7 +16,7 @@ cfg = {
 }
 
 def _get_inverter_ip(ip_net, mac): # may raise exception
-  cmd = 'nmap -sP -sn -n %s' % ip_net
+  cmd = 'nmap -sP -sn --host-timeout 20 -n %s' % ip_net
   out = subprocess.check_output(cmd, shell=True)
   """ example ouput:
   Starting Nmap 7.70 ( https://nmap.org ) at 2018-04-10 18:41 CEST
