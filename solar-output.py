@@ -5,7 +5,7 @@ import subprocess
 #config
 cfg = {
   'ip_net': '192.168.0.0/24', #local IP subnet having inverter
-  'mac': '34:A3:95', #prefix of (or full) inverter MAC address
+  'mac': '00:90:A9', #prefix of (or full) inverter MAC address
   'db': {
     'h': 'localhost',
     'u': 'dbuser',
@@ -32,7 +32,7 @@ def _get_inverter_ip(ip_net, mac): # may raise exception
     if 'report for' in line:
       last_ip = line.strip().split()[-1]
     if 'MAC Address' in line:
-      outmac = line.split()[-2]
+      outmac = line.split('(')[0].strip().split()[-1]
       if outmac.lower().startswith(mac.lower()):
         return last_ip
   return ''
