@@ -18,11 +18,11 @@ def get_inverter_data(ip_net, mac):
   eg = pg = 0
   return eg, pg
 
-def insert_in_db(eg, pg):
+def insert_in_db(cfg_db, eg, pg):
   #TODO
   return
 
-def post_pvoutput(eg, pg):
+def post_pvoutput(cfg_api_key, eg, pg):
   #TODO
   return
 
