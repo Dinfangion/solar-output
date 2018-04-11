@@ -17,6 +17,7 @@ cfg = {
 }
 
 def _get_inverter_ip(ip_net, mac): # may raise exception
+  print 'using nmap to find inverter'
   cmd = 'nmap -sP -sn --host-timeout 20 -n %s' % ip_net
   out = subprocess.check_output(cmd, shell=True)
   """ example ouput:
