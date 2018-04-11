@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import subprocess
+import requests
 
 #config
 cfg = {
