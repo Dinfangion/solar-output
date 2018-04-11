@@ -37,9 +37,47 @@ def _get_inverter_ip(ip_net, mac): # may raise exception
         return last_ip
   return ''
 
-def get_inverter_data(ip_net, mac):
-  #TODO
-  eg = pg = 0
+def get_inverter_data(ip_net, mac): # may raise exception
+  retry = 2
+  while retry:
+    try:
+      with open('cached_ip.txt', 'r') as f:
+        ip = f.readline().strip()
+    except:
+      ip = ''
+    if not ip:
+      try:
+        ip = _get_inverter_ip(ip_net, mac)
+        with open('cached_ip.txt', 'w') as f:
+          f.write(ip)
+      except Exception as e:
+        print 'ignoring error:', type(e).__name__, str(e)
+    if not ip:
+      raise Exception('unable to get inverter IP address')
+    print 'trying to get data xml from', ip
+    try:
+      resp = requests.get('http://%s/real_time_data.xml' % ip, timeout=10)
+    except Exception as e:
+      try:
+        with open('cached_ip.txt', 'w') as f:
+          f.write('')
+      except:
+        pass
+      retry -= 1
+      if retry:
+        continue # while retry
+      raise e
+    retry = 0
+  eg = ''
+  pg = ''
+  for line in resp.text.splitlines():
+    if '<pac1>' in line:
+      pg = line.split('>')[1].split('<')[0]
+    if '<e-today>' in line:
+      eg = line.split('>')[1].split('<')[0]
+  if not eg or not pg:
+    raise Exception('unable to extract all data from inverter response:\n%s' % resp.text)
+  print 'got data: eg=%s pg=%s' % (eg, pg)
   return eg, pg
 
 def insert_in_db(cfg_db, eg, pg):
@@ -52,9 +90,6 @@ def post_pvoutput(cfg_api_key, eg, pg):
 
 #main
 try:
-  #testing, remove me later
-  print _get_inverter_ip(cfg['ip_net'], cfg['mac']) or 'No inverter found'
-  
   eg, pg = get_inverter_data(cfg['ip_net'], cfg['mac'])
   insert_in_db(cfg['db'], eg, pg)
   post_pvoutput(cfg['api_key'], eg, pg)
