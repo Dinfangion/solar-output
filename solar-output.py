@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-
 import subprocess
 import requests
+import pymysql
 from config import cfg
 
 def _get_inverter_ip(ip_net, mac): # may raise exception
@@ -58,31 +58,51 @@ def get_inverter_data(ip_net, mac): # may raise exception
         continue # while retry
       raise e
     retry = 0
-  eg = ''
-  pg = ''
+  pac1 = ''
+  e_today = ''
   for line in resp.text.splitlines():
     if '<pac1>' in line:
-      pg = line.split('>')[1].split('<')[0]
+      pac1 = line.split('>')[1].split('<')[0]
     if '<e-today>' in line:
-      eg = line.split('>')[1].split('<')[0]
-  if not eg or not pg:
+      e_today = line.split('>')[1].split('<')[0]
+  if '' in (pac1, e_today):
     raise Exception('unable to extract all data from inverter response:\n%s' % resp.text)
-  print 'got data: eg=%s pg=%s' % (eg, pg)
-  return eg, pg
+  print 'got data: pac1=%s e_today=%s' % (pac1, e_today)
+  return dict(pac1=pac1, e_today=e_today)
 
-def insert_in_db(cfg_db, eg, pg):
-  #TODO
+def insert_in_db(cfg_db, data):
+  if not cfg_db['host']:
+    print 'skipping database insert'
+    return
+  db = pymysql.connect(host=cfg_db['host'],
+                       connect_timeout=10,
+                       user=cfg_db['user'],
+                       password=cfg_db['pwd'],
+                       db=cfg_db['db_name'],
+                       charset='utf8',
+                       cursorclass=pymysql.cursors.DictCursor)
+  with db.cursor() as c:
+    columns = ','.join(data.keys())
+    value_holders = ','.join(('%s',)*len(data.keys()))
+    sql = 'insert into %s (%s) values (%s)' % (cfg_db['table'], columns, value_holders)
+    c.execute(sql, data.values())
+  db.commit()
+  print 'data inserted in database'
   return
 
-def post_pvoutput(cfg_api_key, eg, pg):
+def post_pvoutput(cfg_api_key, data):
   #TODO
   return
 
 #main
 try:
-  eg, pg = get_inverter_data(cfg['ip_net'], cfg['mac'])
-  insert_in_db(cfg['db'], eg, pg)
-  post_pvoutput(cfg['api_key'], eg, pg)
+  data = get_inverter_data(cfg['ip_net'], cfg['mac'])
+  try:
+    insert_in_db(cfg['db'], data)
+  except Exception as e:
+    print 'db insert failed:', type(e).__name__, str(e)
+    print 'moving on anyway'
+  post_pvoutput(cfg['api_key'], data)
 except Exception as e:
   print type(e).__name__, str(e)
 print 'Done'
