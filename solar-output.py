@@ -2,19 +2,7 @@
 
 import subprocess
 import requests
-
-#config
-cfg = {
-  'ip_net': '192.168.0.0/24', #local IP subnet having inverter
-  'mac': '00:90:A9', #prefix of (or full) inverter MAC address
-  'db': {
-    'h': 'localhost',
-    'u': 'dbuser',
-    'p': 'pwd',
-    'd': 'dbname'
-  },
-  'api_key': 'itsasecret', #pvoutput webservice API key
-}
+from config import cfg
 
 def _get_inverter_ip(ip_net, mac): # may raise exception
   print 'using nmap to find inverter'
