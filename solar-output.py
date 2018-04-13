@@ -1,11 +1,11 @@
 #!/usr/bin/env python
-import subprocess
+import subprocess, datetime, logging
 import requests
 import pymysql
 from config import cfg
 
 def _get_inverter_ip(ip_net, mac): # may raise exception
-  print 'using nmap to find inverter'
+  logging.info('using nmap to find inverter')
   cmd = 'nmap -sP -sn --host-timeout 20 -n %s' % ip_net
   out = subprocess.check_output(cmd, shell=True)
   """ example ouput:
@@ -41,10 +41,10 @@ def get_inverter_data(ip_net, mac): # may raise exception
         with open('cached_ip.txt', 'w') as f:
           f.write(ip)
       except Exception as e:
-        print 'ignoring error:', type(e).__name__, str(e)
+        logging.warning('%s : %s' % (type(e).__name__, str(e)))
     if not ip:
       raise Exception('unable to get inverter IP address')
-    print 'trying to get data xml from', ip
+    logging.info('trying to get data xml from %s' % ip)
     try:
       resp = requests.get('http://%s/real_time_data.xml' % ip, timeout=10)
     except Exception as e:
@@ -60,6 +60,7 @@ def get_inverter_data(ip_net, mac): # may raise exception
     retry = 0
   pac1 = ''
   e_today = ''
+  time_stamp = datetime.datetime.now()
   for line in resp.text.splitlines():
     if '<pac1>' in line:
       pac1 = line.split('>')[1].split('<')[0]
@@ -67,12 +68,12 @@ def get_inverter_data(ip_net, mac): # may raise exception
       e_today = line.split('>')[1].split('<')[0]
   if '' in (pac1, e_today):
     raise Exception('unable to extract all data from inverter response:\n%s' % resp.text)
-  print 'got data: pac1=%s e_today=%s' % (pac1, e_today)
-  return dict(pac1=pac1, e_today=e_today)
+  logging.info('got data: pac1=%s e_today=%s' % (pac1, e_today))
+  return dict(time_stamp=time_stamp, pac1=pac1, e_today=e_today)
 
-def insert_in_db(cfg_db, data):
+def insert_in_db(cfg_db, data): # may raise exception
   if not cfg_db['host']:
-    print 'skipping database insert'
+    logging.info('skipping database insert')
     return
   db = pymysql.connect(host=cfg_db['host'],
                        connect_timeout=10,
@@ -87,7 +88,7 @@ def insert_in_db(cfg_db, data):
     sql = 'insert into %s (%s) values (%s)' % (cfg_db['table'], columns, value_holders)
     c.execute(sql, data.values())
   db.commit()
-  print 'data inserted in database'
+  logging.info('data inserted in database')
   return
 
 def post_pvoutput(cfg_api_key, data):
@@ -96,13 +97,18 @@ def post_pvoutput(cfg_api_key, data):
 
 #main
 try:
-  data = get_inverter_data(cfg['ip_net'], cfg['mac'])
-  try:
-    insert_in_db(cfg['db'], data)
-  except Exception as e:
-    print 'db insert failed:', type(e).__name__, str(e)
-    print 'moving on anyway'
-  post_pvoutput(cfg['api_key'], data)
+  logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
+  dt_now = datetime.datetime.now()
+  if cfg['wake_hour']<=dt_now.hour and cfg['sleep_hour']>dt_now.hour:
+    data = get_inverter_data(cfg['ip_net'], cfg['mac'])
+    try:
+      insert_in_db(cfg['db'], data)
+    except Exception as e:
+      logging.error('db insert failed: %s : %s' % (type(e).__name__, str(e)))
+      logging.info('moving on anyway')
+    post_pvoutput(cfg['api_key'], data)
+  else:
+    logging.info('Zzzzzzzz')
 except Exception as e:
-  print type(e).__name__, str(e)
-print 'Done'
+  logging.fatal('%s : %s' % (type(e).__name__, str(e)))
+logging.info('Done')
