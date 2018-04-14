@@ -107,7 +107,7 @@ def post_pvoutput(cfg_pvoutput, data): # may raise exceptions
     'v2': data['pac1']
   }
   logging.info('posting data to pvoutput')
-  resp = requests.post(url, headers=headers, data=params)
+  resp = requests.post(url, headers=headers, data=params, timeout=10)
   if resp.status_code != 200:
     logging.error('pvoutput returned code %d' % resp.status_code)
     logging.debug(resp.text)
