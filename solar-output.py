@@ -63,12 +63,12 @@ def get_inverter_data(ip_net, mac): # may raise exception
   time_stamp = datetime.datetime.now()
   for line in resp.text.splitlines():
     if '<pac1>' in line:
-      pac1 = line.split('>')[1].split('<')[0]
+      pac1 = int(line.split('>')[1].split('<')[0])
     if '<e-today>' in line:
-      e_today = line.split('>')[1].split('<')[0]
+      e_today = float(line.split('>')[1].split('<')[0])
   if '' in (pac1, e_today):
     raise Exception('unable to extract all data from inverter response:\n%s' % resp.text)
-  logging.info('got data: pac1=%s e_today=%s' % (pac1, e_today))
+  logging.info('got data: pac1=%d e_today=%.3f' % (pac1, e_today))
   return dict(time_stamp=time_stamp, pac1=pac1, e_today=e_today)
 
 def insert_in_db(cfg_db, data): # may raise exception
@@ -91,8 +91,25 @@ def insert_in_db(cfg_db, data): # may raise exception
   logging.info('data inserted in database')
   return
 
-def post_pvoutput(cfg_api_key, data):
-  #TODO
+def post_pvoutput(cfg_pvoutput, data): # may raise exceptions
+  if not cfg_pvoutput['system_id']:
+    logging.info('skipping pvoutput post')
+  url = 'https://pvoutput.org/service/r2/addstatus.jsp'
+  headers = {
+    'X-Pvoutput-SystemId': cfg_pvoutput['system_id'],
+    'X-Pvoutput-Apikey': cfg_pvoutput['api_key']
+  }
+  params = {
+    'd': data['time_stamp'].strftime('%Y%m%d'),
+    't': data['time_stamp'].strftime('%H:%M'),
+    'v1': int(1000*data['e_today']), #kWh to Wh
+    'v2': data['pac1']
+  }
+  logging.info('posting data to pvoutput')
+  resp = requests.post(url, headers=headers, data=params)
+  if resp.status_code != 200:
+    logging.error('pvoutput returned code %d' % resp.status_code)
+    logging.debug(resp.text)
   return
 
 #main
@@ -106,9 +123,9 @@ try:
     except Exception as e:
       logging.error('db insert failed: %s : %s' % (type(e).__name__, str(e)))
       logging.info('moving on anyway')
-    post_pvoutput(cfg['api_key'], data)
+    post_pvoutput(cfg['pvoutput'], data)
   else:
     logging.info('Zzzzzzzz')
 except Exception as e:
-  logging.fatal('%s : %s' % (type(e).__name__, str(e)))
+  logging.error('%s : %s' % (type(e).__name__, str(e)))
 logging.info('Done')
