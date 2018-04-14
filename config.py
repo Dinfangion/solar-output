@@ -11,6 +11,9 @@ cfg = {
     'db_name': 'solar',
     'table': 'solar_output',
   },
-  'api_key': '', #pvoutput webservice API key; leave empty to skip upload
+  'pvoutput': {
+    'system_id': '', #pvoutput system id; leave empty to skip upload
+    'api_key': '', #pvoutput webservice API key
+  },
 }
 
