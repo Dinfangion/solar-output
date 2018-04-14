@@ -17,7 +17,7 @@ Solar panels => solar inverter => rs232-to-ethernet module => router => LAN/inte
 
 Hardware: Raspberry Pi 3 https://www.raspberrypi.org/  
 Operating system: Raspbian 9 stretch https://distrowatch.com/table.php?distribution=raspbian     
-Software: Bash 4.4.12, Python 2.7.13, Mariadb-server 10.1.23  
+Software: Bash 4.4.12, Python 2.7.13, Mariadb-server 10.1.23, Nmap 7.40-1    
 sudo apt-get install mariadb-server python-requests python-pymysql nmap
 
 1. Activate your API-Key on pvoutput.org
