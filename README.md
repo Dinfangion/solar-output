@@ -32,8 +32,11 @@ create table solar_output (
 	e_today FLOAT
 );
 ```
+3. Edit config.py
+4. chmod +x solar-output.py
+5. sudo crontab -e
 
 crontab for root: (yes root, otherwise nmap doesn't output everything you need)
 ```
-*/10 * * * * /home/user/solar/solar-output.py
+*/10 * * * * /home/user/yourpath/solar-output.py
 ```
