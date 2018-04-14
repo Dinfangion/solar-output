@@ -94,6 +94,7 @@ def insert_in_db(cfg_db, data): # may raise exception
 def post_pvoutput(cfg_pvoutput, data): # may raise exceptions
   if not cfg_pvoutput['system_id']:
     logging.info('skipping pvoutput post')
+    return
   url = 'https://pvoutput.org/service/r2/addstatus.jsp'
   headers = {
     'X-Pvoutput-SystemId': cfg_pvoutput['system_id'],
