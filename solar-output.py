@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 import subprocess, datetime, logging
 import requests
 import pymysql
@@ -83,10 +83,10 @@ def insert_in_db(cfg_db, data): # may raise exception
                        charset='utf8',
                        cursorclass=pymysql.cursors.DictCursor)
   with db.cursor() as c:
-    columns = ','.join(data.keys())
-    value_holders = ','.join(('%s',)*len(data.keys()))
+    columns = ','.join(list(data.keys()))
+    value_holders = ','.join(('%s',)*len(list(data.keys())))
     sql = 'insert into %s (%s) values (%s)' % (cfg_db['table'], columns, value_holders)
-    c.execute(sql, data.values())
+    c.execute(sql, list(data.values()))
   db.commit()
   logging.info('data inserted in database')
   return
