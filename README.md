@@ -10,8 +10,9 @@ Solar panels => solar inverter => rs232-to-ethernet module => router => LAN/inte
 Option 1. Use the android app of SAJ, and the login that you received during installation.  
    You can read the outputs and graphs which are posted from your solar inverter to a SAJ server in Alibaba Cloud.  
 Option 2. Scan with nmap/zenmap gui for the MAC-address and IP of your solar inverter.  
-   Use your browser to go the overview on http://x.x.x.x  
-Option 3. (this project) Make a script to post your energy output to your own database and/or pvoutput.org  
+   Use your browser to go the overview on http://x.x.x.x
+Option 3. Use Home Assistant https://www.home-assistant.io/integrations/saj/
+Option 4. (this project) Make a script to post your energy output to your own database and/or pvoutput.org  
 
 **My setup:**
 
